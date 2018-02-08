@@ -33,9 +33,12 @@
       - Conveniently, `cos()` and `atan()` return the same range of values (`[-1, 1]`). This made it easy to compare them initially, but an additional complication was added later.
       - Note I say the angle is "behind" `angleLimit` instead of just less than `angleLimit` because the definition of "behind" changes over the animation.
     - We use `angleLimit` to compute the position of the moving white dot.
-    - If `p` is within a certain distance of the moving white dot, we return white.
-    - If `p` is within a certain distance of the point on the circle AND `angle` is "behind" `angleLimit`, we return red.
-    - Otherwise, we return blue.
+    - We are noe ready to return a color:
+        - If `p` is within a certain distance of the moving white dot, we return white.
+        - If `p` is within a certain distance of the point on the circle AND `angle` is "behind" `angleLimit`, we return red.
+        - Otherwise, we return blue.
+    - In practice, we actually return the color above blended with the input `blendColor` depending on how close `p` is to the white moving dot or ellipse. This is done to remove aliasing/blockiness from the image. More on this below.
+        - If `p` is "close" to the white dot, we either blend with `blendColor` or with the red ellipse color, depending on whether we are "behind" the `angleLimit`.
 - The trick to making `getEllipseColor()` to draw ellipses instead of circles is to simply scale the input position `p`. I initially attempted a more "pure" ellipse drawing function that would preserve line thickness along the ellipse, but I noticed the original animation itself has varying line thickness caused by the scaling.
     - The moving white dot is also clearly affected by this scaling effect in the original animation.
 
@@ -55,7 +58,24 @@
 - In order to make the white moving dot spend more time closer to its poles (i.e. the points where the ellipse is either not fully drawn or fully drawn), I use a Perlin gain function with `gain < 0.5`. This gives the desired effect of spending more time at the edges of the `[0, 1]` range, rather than the middle.
 - I noticed the white moving dot does not start at the "top" of the ellipse, but it is instead offset by a little bit (see image below).
 ![](ellipse/offset.png)
-  - This can be fixed by adding a constant offset (say, `LIMIT_ORIGIN`, or `L_O`, for short) to `angleLimit` to shift its range to `[-PI + L_O, PI + L_O]`. However, this makes the comparison with `angle`, which is in `[-1, 1]`, not work anymore. Why? Assuming `L_O < 0`, the region `[PI + L_O, PI]` of `angle` is visually in the `[-PI + L_O, -PI]` range, but not numerically. The solution to this is explained with more depth in the comments for `isBehindAngleLimit()`, but it essentially treats the `[PI + L_O, PI]` region of `angle` as a special case.
+  - This can be fixed by adding a constant offset (say, `LIMIT_ORIGIN`, or `L_O`, for short) to `angleLimit` to shift its range to `[-PI + L_O, PI + L_O]`. However, this makes the comparison with `angle`, which is in `[-1, 1]`, not work anymore. Why? Assuming `L_O < 0`, the region `[PI + L_O, PI]` of `angle` is visually in the `[-PI + L_O, -PI]` range of `angleLimit`, but not numerically. The solution to this is explained with more depth in the comments for `isBehindAngleLimit()`, but it essentially treats the `[PI + L_O, PI]` region of `angle` as a special case.
+
+### Multiple Ellipses - Animation
+
+- Having a correct `getEllipseColor()`, we can create different ellipses by transforming the point `p` passed to it. Note that, if we want to transform the ellipse with a transformation `T`, we really need to transform `p` with `inv(T)`, just like in ray-intersection tests or SDF scenes.
+- By scaling `p`, we scale the resulting ellipse (we use this to make ellipses from the circle in the first place).
+    - The original animation seems to scale the Y axis of the ellipses over time to change them from a circle (when the ellipse is not drawn at all) to an elongated ellipse (when it is fully drawn). I reproduced this effect using a cosine function with the same frequency as the one dictating the movement of the white moving dot, in order to keep the movements synchronized.
+    - In addition, I perform some additional scaling on both the X and Y axes in order to make the ellipse as a whole bigger when it's fully drawn. This is because, if I keep a constant scale to the ellipses, it either looks too small when fully drawn, or looks too big when not drawn (the white dots go off the screen). I suspect the original animation did this as well, since I noticed it has the same aspect ratio as Shadertoy (a different aspect ratio could alleviate this problem, in theory).
+- By rotating `p`, we... rotate the ellipse. The original animation clearly does this.
+    - Again, we control this using a cosine function with the same frequency as the one controlling the white moving dot.
+- Translating `p` is possible, but doesn't seem to be done in the original animation.
+
+### Multiple Ellipses - Blending
+
+- We can now animate mutliple ellipses, but how should we combine the `getEllipseColor()` calls?
+- The original animation seems to layer the ellipses such that the smaller ellipses get drawn on top of bigger ellipses (see example below):
+![](ellipse/layer.png)
+- Naively making `getEllipseColor()` calls from small to big ellipses works for creating the correct layering effect, but breaks the color blending logic.
 
 # Assignment Description
 
