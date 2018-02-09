@@ -143,6 +143,12 @@
 - Naively making `ellipse()` calls from small to big ellipses and stopping when `hitGeometry` is true works for creating the correct layering effect, but breaks the color blending logic, because it has no information of what color is behind the ellipse/white dot being colored.
 - Instead, we can initialize `blendColor` to the background blue color and go from big to small ellipses instead. If we hit geoemetry, we update `blendColor` with the return value of `ellipse()`. This essentially propagates the correct background color in `blendColor` until the smallest/topmost ellipse that needs it.
 
+### Sidenote: How Many Ellipses?
+
+- The original animation seems to contain 20 or so ellipses. I added 12 ellipses, starting from the biggest one. I have two reasons for not going all the way to 20:
+    - I seemed to be getting diminishing returns from each ellipse I added. The smaller ellipses don't add that much to the animation.
+    - The assignment says we don't need to be pixel-perfect, and that it's more about understanding the ideas used to render the animation. I hope I showed that I do understand the ideas, and that with additional time, I could have placed 20 or more ellipses.
+
 ## Extra Credit
 
 ### Flip
@@ -154,11 +160,31 @@
 - We scale Y by dividing it by `cos(modAdjTIme * 4.0)`. Using `modAdjTime` as the time parameter ensures it's consistent across animations. Multiplying it by 4 has two desired effects: it makes the flip happen multiple times per animation cycle, and it ensures the scaling begins and ends with a identity scale (i.e. scaling by 1), since the animation starts at `PI * 0.5` (`PI * 0.5 * 4 = PI * 2`, so `cos()` returns 1) and ends at `PI * 1.5` (`PI * 1.5 * 4 = PI * 6`, so `cos()` returns 1).
     - The 4 factor can be tweaked, but this requires changes to the extremes of the `[PI * 0.5, PI * 1.5]` range, unless you "tweak" it to another multiple of 4.
 
+### Alternative Blend Modes
+
+- Enable by uncommenting one of `#define ADD_LIGHT_BLEND` and `#define ADD_DARK_BLEND`.
+- This was a bit of an experiment on "tone mapping" (really gamma correction) and additive blending. The default shader uses interpolative blending. This reproduces the effect in the original animation of ellipses completely occluding ellipses behind them. However, we could use additive blending instead to make our pixels brighter if they overlap more than one ellipse.
+    - The gamma correction formula was taken from [Wikipedia](https://en.wikipedia.org/wiki/Gamma_correction).
+- There are two modes: the "light blend", and the "dark blend". Both have additive blending, but the dark blend exaggerates the bright overlapping areas more, at the cost of making the overall image significantly darker.
+
+### Pulsating Color
+
+- Enable by uncommenting `#define PULSATING_COLOR`.
+- Makes the red ellipse and white moving dot's colors change over time. This is done by interpolating between two colors using a `cos()` scaled to `[0, 1]`.
+  - The time parameter to this `cos()` is scaled so that the cosine has a frequency that's not an integer multiple of the main frequncy (the one that dictates the moving dot and ellipse rotation). This makes it so the color pattern is flipped every other cycle (e.g. when at the top of the screen, the moving dot will have one color on one cycle, and another color on the next cycle).
+
+### Sidenote
+
+- My favorite combination is turning on flip, dark blend, and pulsating color. Just flip and dark blend is good too, I think.
+
 # External References
 
 - [Stephen Whitmore's article on 2D metaballs](https://www.gamedev.net/articles/programming/graphics/exploring-metaballs-and-isosurfaces-in-2d-r2556)
 - [Jamie Wong's article on 2D metaballs](http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/)
 - [Wikipedia article on ellipses](https://en.wikipedia.org/wiki/Ellipse) (although not much of it is left in the current implementation, due to the *shift to spheres*)
+- [Wikipedia article on gamma correction](https://en.wikipedia.org/wiki/Gamma_correction)
+
+
 # Assignment Description
 
 For this assignment, you will re-create various animations demonstrating a combination of toolbox functions and the rendering techniques you've already learned. The motivation for this is to help you become more familiar with toolbox functions as well as give you experience in producing a desired aesthetic.
