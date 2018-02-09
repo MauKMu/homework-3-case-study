@@ -7,7 +7,7 @@
 
 # Overview
 
-- You can see the original readme [here](https://github.com/MauKMu/homework-3-case-study).
+- You can see the original readme [here](https://github.com/MauKMu/homework-3-case-study) (recommended).
 - I implemented two animations: "Paw Metaballs" (intermediate) and "Electron Orbitals" (difficult).
 
 # Paw Metaballs
