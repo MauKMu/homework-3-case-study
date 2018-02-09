@@ -184,7 +184,7 @@
 - [Wikipedia article on ellipses](https://en.wikipedia.org/wiki/Ellipse) (although not much of it is left in the current implementation, due to the *shift to spheres*)
 - [Wikipedia article on gamma correction](https://en.wikipedia.org/wiki/Gamma_correction)
 
-
+<!--
 # Assignment Description
 
 For this assignment, you will re-create various animations demonstrating a combination of toolbox functions and the rendering techniques you've already learned. The motivation for this is to help you become more familiar with toolbox functions as well as give you experience in producing a desired aesthetic.
@@ -227,3 +227,4 @@ All shaders will be graded by this scheme:
 * 65% Reference matching: does this show understanding of the motion, colors, and rendering techniques required to create the animation? This does not have to be pixel-perfect for full credit.
 * 20% Writeup completeness
 * 15% Performance considerations: motion should be fluid, ideally no less than 30 FPS at Shadertoy-resolution on a gaming laptop. If your shader (without EC) is seriously under-performant there will be a point penalty.
+-->
