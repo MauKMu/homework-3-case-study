@@ -22,7 +22,7 @@
 ### Basic Rendering
 
 - This shader converts its fragment's coordinate to a `vec2` in NDC space (origin at the center of the image). This `vec2` is fed through a series of functions in order to determine which color it should get, based on its proximity to certain shapes.
-- The extra credit performs some ray-marching (with some inspiration taken from sphere-marching) to render 3D metaballs instead.
+- The extra credit performs some ray-marching to render 3D metaballs instead.
 
 ### Metaballs - Static
 
@@ -43,6 +43,25 @@
     - The center is then simply `dist * dir`.
 - For a given pixel with position `p`, we sum the return values of one static `rawMetaball()` and eight `aniMetaball()` calls to which we pass `p`. This gives us a `metaSum`. If this `metaSum` is above a threshold, then the pixel is said to be in a metaball (which one, we do not know).
     - In order to avoid aliasing/blockiness, we don't just return black or white. Instead, we compute the difference between `metaSum` and the threshold, and use this value (fed through a `smoothstep()` with range `[0, BLEND_EPSILON]`) to blend between white and black. `BLEND_EPSILON` can be tweaked to exaggerate this effect.
+
+## Extra Credit
+
+- Due to some structural changes described below, I chose to implement this extra credit on a separate shader:
+  - [https://www.shadertoy.com/view/Xscyz7](https://www.shadertoy.com/view/Xscyz7)
+
+### Ray-marched Metaballs - Shading
+
+- This modifies the metaball functions to be 3-dimensional instead. For each pixel with a 2D position `p`, we ray-march as follows:
+    - The ray origin is `(p.x, p.y, -0.5)`.
+    - The ray direction is `(0, 0, 1)`.
+    - We take fixed steps of size `0.01`.
+    - At each step, we compute `metaSum`. If it is above our threshold, we stop marching.
+- The reason for switching to 3D is to allow us to get **normals**. Normals can be rendered by uncommenting only `#define NORMALS`.
+    - The normal is computed using the gradient method described in [this paper](https://static1.squarespace.com/static/58a1bc3c3e00be6bfe6c228c/t/58a4d25146c3c4233fb15cc2/1487196929690/ImplicitProceduralPlanetGeneration-Report.pdf). The metaball function is sampled six times, such that each time, it's sampled at a point that's a small epsilon away from the "intersection" point on one dimension. These values are used to approximate the gradient and normal at that point.
+- Another rendering mode uses Shadertoy's included **cubemaps**. The cubemap is sampled using the normal. This can be activated by uncommenting only `#define CUBEMAP`.
+- Finally, we can use the normals in a more conventional way for **Lambert + Blinn-Phong** shading. This can be activated by uncommenting only `#define BLINN_PHONG`.
+- In order to showcase the shading better, the background is now dark gray.
+- The anti-aliasing blending is still done by projecting the "intersection" point onto the `Z = 0` plane and re-computing the `metaSum`. The same blend as the 2D case is then performed.
 
 # Electron Orbitals
 
@@ -82,7 +101,7 @@
         - Otherwise, we return blue.
     - In practice, we actually return the color above blended with the input `blendColor` depending on how close `p` is to the white moving dot or ellipse. This is done to remove aliasing/blockiness from the image. More on this below.
         - If `p` is "close" to the white dot, we either blend with `blendColor` or with the red ellipse color, depending on whether we are "behind" the `angleLimit`.
-- The trick to making `getEllipseColor()` to draw ellipses instead of circles is to simply scale the input position `p`. I initially attempted a more "pure" ellipse drawing function that would preserve line thickness along the ellipse, but I noticed the original animation itself has varying line thickness caused by the scaling.
+- The trick to making `getEllipseColor()` draw ellipses instead of circles is to simply scale the input position `p`. I initially attempted a more "pure" ellipse drawing function that would preserve line thickness along the ellipse, but I noticed the original animation itself has varying line thickness caused by the scaling.
     - The moving white dot is also clearly affected by this scaling effect in the original animation.
 
 ### Single Ellipse, Unidirectional
@@ -133,7 +152,7 @@
 - We use `modAdjTime = mod(adjTime, 2.0 * PI)` to get a value to tell us where we are in the animation, regardless of how many animation cycle have been performed.
 - We limit the flipping animation to `modAdjTime` in `[PI * 0.5, PI * 1.5]` so that it only happens when the ellipse is mostly drawn.
 - We scale Y by dividing it by `cos(modAdjTIme * 4.0)`. Using `modAdjTime` as the time parameter ensures it's consistent across animations. Multiplying it by 4 has two desired effects: it makes the flip happen multiple times per animation cycle, and it ensures the scaling begins and ends with a identity scale (i.e. scaling by 1), since the animation starts at `PI * 0.5` (`PI * 0.5 * 4 = PI * 2`, so `cos()` returns 1) and ends at `PI * 1.5` (`PI * 1.5 * 4 = PI * 6`, so `cos()` returns 1).
-    - The 4 factor can be tweaked, but this requires changes to the extremes of the `[PI * 0.5, PI * 1.5]` range.
+    - The 4 factor can be tweaked, but this requires changes to the extremes of the `[PI * 0.5, PI * 1.5]` range, unless you "tweak" it to another multiple of 4.
 
 # External References
 
