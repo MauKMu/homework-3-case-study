@@ -19,6 +19,30 @@
 
 ## Techniques Used
 
+### Basic Rendering
+
+- This shader converts its fragment's coordinate to a `vec2` in NDC space (origin at the center of the image). This `vec2` is fed through a series of functions in order to determine which color it should get, based on its proximity to certain shapes.
+- The extra credit performs some ray-marching (with some inspiration taken from sphere-marching) to render 3D metaballs instead.
+
+### Metaballs - Static
+
+- As hinted by its title, the original animation appears to use metaballs to achieve the "blob" animation.
+- I defined a `rawMetaball()` function (please read the comment above this function for an important warning). It simply returns the metaball's radius divided by the distance from the input position `p` to the metaball's center.
+    - This function has the basic property of having a high value when `p` is inside the metaball, and low when `p` is outside it. It is always positive.
+
+### Metaballs - Animation
+
+- From observing the original animation, I inferred the following:
+  - There is one metaball in the center, and eight metaballs moving towards and away from the center periodically.
+  - The moving metaballs seem to have a sinusoidal function controlling their distance to the center.
+  - Each moving metaball is offset (in terms of where it is in its animation) relative to its neighbors.
+    - Since everything looks pretty uniform, this offset can be inferred to be `2 * PI / 8`, if we define it in terms of an angle in a circle.
+- Using this information, I defined `aniMetaball()`, which computes a moving metaball's center given two parameters: the direction `dir` in which it is moving, and its time offset. It then returns the result of a call to `rawMetaball()` using the computed center.
+    - More specifically, we compute a time-dependent `dist` value. This is the distance from the origin along `dir`. 
+    - `dist` is computed using `cos()` with an adequately scaled time variable. The output of `cos()` is mapped to the range `[0, 1]`, since the original animation doesn't seem to have the moving metaballs move past the center (which would be accomplished with negative `dist` values)
+    - The center is then simply `dist * dir`.
+- For a given pixel with position `p`, we sum the return values of one static `rawMetaball()` and eight `aniMetaball()` calls to which we pass `p`. This gives us a `metaSum`. If this `metaSum` is above a threshold, then the pixel is said to be in a metaball (which one, we do not know).
+    - In order to avoid aliasing/blockiness, we don't just return black or white. Instead, we compute the difference between `metaSum` and the threshold, and use this value (fed through a `smoothstep()` with range `[0, BLEND_EPSILON]`) to blend between white and black. `BLEND_EPSILON` can be tweaked to exaggerate this effect.
 
 # Electron Orbitals
 
@@ -33,6 +57,10 @@
 - [https://www.shadertoy.com/view/Mt2BDt](https://www.shadertoy.com/view/Mt2BDt)
 
 ## Techniques Used
+
+### Basic Rendering
+
+- This shader converts its fragment's coordinate to a `vec2` in NDC space (origin at the center of the image). This `vec2` is fed through a series of functions in order to determine which color it should get, based on its proximity to certain shapes.
 
 ### Single Ellipse, Bidirectional
 
@@ -107,6 +135,11 @@
 - We scale Y by dividing it by `cos(modAdjTIme * 4.0)`. Using `modAdjTime` as the time parameter ensures it's consistent across animations. Multiplying it by 4 has two desired effects: it makes the flip happen multiple times per animation cycle, and it ensures the scaling begins and ends with a identity scale (i.e. scaling by 1), since the animation starts at `PI * 0.5` (`PI * 0.5 * 4 = PI * 2`, so `cos()` returns 1) and ends at `PI * 1.5` (`PI * 1.5 * 4 = PI * 6`, so `cos()` returns 1).
     - The 4 factor can be tweaked, but this requires changes to the extremes of the `[PI * 0.5, PI * 1.5]` range.
 
+# External References
+
+- [Stephen Whitmore's article on 2D metaballs](https://www.gamedev.net/articles/programming/graphics/exploring-metaballs-and-isosurfaces-in-2d-r2556)
+- [Jamie Wong's article on 2D metaballs](http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/)
+- [Wikipedia article on ellipses](https://en.wikipedia.org/wiki/Ellipse) (although not much of it is left in the current implementation, due to the *shift to spheres*)
 # Assignment Description
 
 For this assignment, you will re-create various animations demonstrating a combination of toolbox functions and the rendering techniques you've already learned. The motivation for this is to help you become more familiar with toolbox functions as well as give you experience in producing a desired aesthetic.
