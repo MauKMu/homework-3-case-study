@@ -5,6 +5,21 @@
 - Name: Mauricio Mutai
 - PennKey: `mmutai`
 
+# Paw Metaballs
+
+## Reference Animation
+
+- Taken from the [original homework repo](https://github.com/CIS-566-2018/homework-3-case-study).
+
+![](meta/meta.gif)
+
+## My Implementation
+
+- [https://www.shadertoy.com/view/4s3cRM](https://www.shadertoy.com/view/4s3cRM)
+
+## Techniques Used
+
+
 # Electron Orbitals
 
 ## Reference Animation
@@ -68,14 +83,29 @@
     - In addition, I perform some additional scaling on both the X and Y axes in order to make the ellipse as a whole bigger when it's fully drawn. This is because, if I keep a constant scale to the ellipses, it either looks too small when fully drawn, or looks too big when not drawn (the white dots go off the screen). I suspect the original animation did this as well, since I noticed it has the same aspect ratio as Shadertoy (a different aspect ratio could alleviate this problem, in theory).
 - By rotating `p`, we... rotate the ellipse. The original animation clearly does this.
     - Again, we control this using a cosine function with the same frequency as the one controlling the white moving dot.
+    - In the original animation, some ellipses rotate clockwise (the bigger ones), while others rotate counterclockwise. This is also handled by having the rotation speed be a modifiable parameter for each ellipse.
 - Translating `p` is possible, but doesn't seem to be done in the original animation.
+- An `ellipse()` function was created that handles transforming `p` given parameters to specify rotation speed, initial rotation offset, and desired scale.
 
 ### Multiple Ellipses - Blending
 
-- We can now animate mutliple ellipses, but how should we combine the `getEllipseColor()` calls?
+- We can now animate mutliple ellipses, but how should we combine the `ellipse()` calls?
 - The original animation seems to layer the ellipses such that the smaller ellipses get drawn on top of bigger ellipses (see example below):
 ![](ellipse/layer.png)
-- Naively making `getEllipseColor()` calls from small to big ellipses works for creating the correct layering effect, but breaks the color blending logic.
+- I thought it would be helpful to introduce a `hitGeometry` boolean output to `getEllipseColor()` and `ellipse()` that tells us if the point `p` hit geometry, that is, was close enough to the ellipse or white moving dot.
+- Naively making `ellipse()` calls from small to big ellipses and stopping when `hitGeometry` is true works for creating the correct layering effect, but breaks the color blending logic, because it has no information of what color is behind the ellipse/white dot being colored.
+- Instead, we can initialize `blendColor` to the background blue color and go from big to small ellipses instead. If we hit geoemetry, we update `blendColor` with the return value of `ellipse()`. This essentially propagates the correct background color in `blendColor` until the smallest/topmost ellipse that needs it.
+
+## Extra Credit
+
+### Flip
+
+- Enable by uncommenting `#define FLIP`.
+- In `getEllipseColor`, we scale the Y axis during the middle of the animation to make it appear as if the ellipses are rotating about their local X axes.
+- We use `modAdjTime = mod(adjTime, 2.0 * PI)` to get a value to tell us where we are in the animation, regardless of how many animation cycle have been performed.
+- We limit the flipping animation to `modAdjTime` in `[PI * 0.5, PI * 1.5]` so that it only happens when the ellipse is mostly drawn.
+- We scale Y by dividing it by `cos(modAdjTIme * 4.0)`. Using `modAdjTime` as the time parameter ensures it's consistent across animations. Multiplying it by 4 has two desired effects: it makes the flip happen multiple times per animation cycle, and it ensures the scaling begins and ends with a identity scale (i.e. scaling by 1), since the animation starts at `PI * 0.5` (`PI * 0.5 * 4 = PI * 2`, so `cos()` returns 1) and ends at `PI * 1.5` (`PI * 1.5 * 4 = PI * 6`, so `cos()` returns 1).
+    - The 4 factor can be tweaked, but this requires changes to the extremes of the `[PI * 0.5, PI * 1.5]` range.
 
 # Assignment Description
 
