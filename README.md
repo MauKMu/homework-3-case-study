@@ -124,7 +124,9 @@
 
 - In order to make the white moving dot spend more time closer to its poles (i.e. the points where the ellipse is either not fully drawn or fully drawn), I use a Perlin gain function with `gain < 0.5`. This gives the desired effect of spending more time at the edges of the `[0, 1]` range, rather than the middle.
 - I noticed the white moving dot does not start at the "top" of the ellipse, but it is instead offset by a little bit (see image below).
+
 ![](ellipse/offset.png)
+
   - This can be fixed by adding a constant offset (say, `LIMIT_ORIGIN`, or `L_O`, for short) to `angleLimit` to shift its range to `[-PI + L_O, PI + L_O]`. However, this makes the comparison with `angle`, which is in `[-1, 1]`, not work anymore. Why? Assuming `L_O < 0`, the region `[PI + L_O, PI]` of `angle` is visually in the `[-PI + L_O, -PI]` range of `angleLimit`, but not numerically. The solution to this is explained with more depth in the comments for `isBehindAngleLimit()`, but it essentially treats the `[PI + L_O, PI]` region of `angle` as a special case.
 
 ### Multiple Ellipses - Animation
@@ -143,7 +145,9 @@
 
 - We can now animate mutliple ellipses, but how should we combine the `ellipse()` calls?
 - The original animation seems to layer the ellipses such that the smaller ellipses get drawn on top of bigger ellipses (see example below):
+
 ![](ellipse/layer.png)
+
 - I thought it would be helpful to introduce a `hitGeometry` boolean output to `getEllipseColor()` and `ellipse()` that tells us if the point `p` hit geometry, that is, was close enough to the ellipse or white moving dot.
 - Naively making `ellipse()` calls from small to big ellipses and stopping when `hitGeometry` is true works for creating the correct layering effect, but breaks the color blending logic, because it has no information of what color is behind the ellipse/white dot being colored.
 - Instead, we can initialize `blendColor` to the background blue color and go from big to small ellipses instead. If we hit geoemetry, we update `blendColor` with the return value of `ellipse()`. This essentially propagates the correct background color in `blendColor` until the smallest/topmost ellipse that needs it.
@@ -188,6 +192,7 @@
 - [Jamie Wong's article on 2D metaballs](http://jamie-wong.com/2014/08/19/metaballs-and-marching-squares/)
 - [Wikipedia article on ellipses](https://en.wikipedia.org/wiki/Ellipse) (although not much of it is left in the current implementation, due to the *shift to spheres*)
 - [Wikipedia article on gamma correction](https://en.wikipedia.org/wiki/Gamma_correction)
+- [Pandoc, for converting Markdown to PDFs](https://pandoc.org/)
 
 <!--
 # Assignment Description
